@@ -4,7 +4,7 @@ import { AlertTriangle, CheckCircle2, CircleHelp, ImagePlus, LoaderCircle, Plus,
 import './styles.css';
 
 const blankItem = () => ({ id: '', displayName: '', material: 'DIAMOND_SWORD', customModelData: 1000, texture: '', lore: [], enchantments: [], attributes: [] });
-const enchantments = ['sharpness', 'smite', 'bane_of_arthropods', 'knockback', 'fire_aspect', 'looting', 'sweeping_edge', 'mending', 'unbreaking', 'vanishing_curse'];
+const enchantments = ['aqua_affinity', 'bane_of_arthropods', 'binding_curse', 'blast_protection', 'breach', 'channeling', 'density', 'depth_strider', 'efficiency', 'feather_falling', 'fire_aspect', 'fire_protection', 'flame', 'fortune', 'frost_walker', 'impaling', 'infinity', 'knockback', 'looting', 'loyalty', 'luck_of_the_sea', 'lunge', 'lure', 'mending', 'multishot', 'piercing', 'power', 'projectile_protection', 'protection', 'punch', 'quick_charge', 'respiration', 'riptide', 'sharpness', 'silk_touch', 'smite', 'soul_speed', 'swift_sneak', 'sweeping_edge', 'thorns', 'unbreaking', 'vanishing_curse', 'wind_burst'];
 const attributes = ['ATTACK_DAMAGE', 'ATTACK_SPEED', 'MAX_HEALTH', 'KNOCKBACK_RESISTANCE', 'MOVEMENT_SPEED', 'ARMOR', 'ARMOR_TOUGHNESS', 'LUCK'];
 const slots = ['MAINHAND', 'OFFHAND', 'HEAD', 'CHEST', 'LEGS', 'FEET'];
 const operations = ['ADD', 'ADD_FACTOR', 'MULTIPLY'];
