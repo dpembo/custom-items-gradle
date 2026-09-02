@@ -1,0 +1,86 @@
+import { useEffect, useRef, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import { AlertTriangle, CheckCircle2, CircleHelp, ImagePlus, LoaderCircle, Plus, Save, Trash2, Upload, X } from 'lucide-react';
+import './styles.css';
+
+const blankItem = () => ({ id: '', displayName: '', material: 'DIAMOND_SWORD', customModelData: 1000, texture: '', lore: [], enchantments: [], attributes: [] });
+const enchantments = ['sharpness', 'smite', 'bane_of_arthropods', 'knockback', 'fire_aspect', 'looting', 'sweeping_edge', 'mending', 'unbreaking', 'vanishing_curse'];
+const attributes = ['ATTACK_DAMAGE', 'ATTACK_SPEED', 'MAX_HEALTH', 'KNOCKBACK_RESISTANCE', 'MOVEMENT_SPEED', 'ARMOR', 'ARMOR_TOUGHNESS', 'LUCK'];
+const slots = ['MAINHAND', 'OFFHAND', 'HEAD', 'CHEST', 'LEGS', 'FEET'];
+const operations = ['ADD', 'ADD_FACTOR', 'MULTIPLY'];
+const prettyMaterial = material => material.replace('CARROT_STICK', 'CARROT ON A STICK').replaceAll('_', ' ');
+const request = async (url, options) => { const response = await fetch(url, options); const body = response.status === 204 ? null : await response.json(); if (!response.ok) { const error = new Error(body.message || 'Fix the highlighted fields before saving.'); error.body = body; throw error; } return body; };
+const Help = ({ text }) => <button className="help-button" type="button" title={text} aria-label={text}><CircleHelp size={15} /></button>;
+const isArmor = material => /_(HELMET|CHESTPLATE|LEGGINGS|BOOTS)$/.test(material?.trim().toUpperCase());
+
+function App() {
+  const [project, setProject] = useState(null);
+  const [items, setItems] = useState([]);
+  const [textures, setTextures] = useState([]);
+  const [selectedId, setSelectedId] = useState(null);
+  const [item, setItem] = useState(blankItem());
+  const [problems, setProblems] = useState([]);
+  const [toast, setToast] = useState(null);
+  const [toastDetails, setToastDetails] = useState('');
+  const [showToastDetails, setShowToastDetails] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [exportState, setExportState] = useState({ status: 'idle', message: '' });
+  const [exportDetails, setExportDetails] = useState('');
+  const [showExportDetails, setShowExportDetails] = useState(false);
+  const textureInput = useRef(null);
+
+  const showToast = (message, status = 'success', details = '') => setToast({ message, status, details });
+  const load = async () => { const [nextProject, nextItems, nextTextures] = await Promise.all([request('/api/project'), request('/api/items'), request('/api/textures')]); setProject(nextProject); setItems(nextItems); setTextures(nextTextures); };
+  useEffect(() => { load().catch(error => showToast(error.message, 'error', error.body?.details || error.message)); }, []);
+  useEffect(() => { if (toast?.status !== 'success') return undefined; const timer = setTimeout(() => setToast(null), 4000); return () => clearTimeout(timer); }, [toast]);
+  const update = (field, value) => setItem(current => ({ ...current, [field]: value }));
+  const updateListEntry = (field, index, key, value) => update(field, item[field].map((entry, entryIndex) => entryIndex === index ? { ...entry, [key]: value } : entry));
+  const removeListEntry = (field, index) => update(field, item[field].filter((entry, entryIndex) => entryIndex !== index));
+  const select = nextItem => { setSelectedId(nextItem.id); setItem(structuredClone(nextItem)); setProblems([]); setToast(null); };
+  const save = async () => {
+    try {
+      const result = await request(selectedId ? `/api/items/${selectedId}` : '/api/items', { method: selectedId ? 'PUT' : 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(item) });
+      setProblems(result.problems); if (!result.item) return;
+      await load(); setSelectedId(result.item.id); setItem(result.item); showToast('Item saved to the project directory.');
+    } catch (error) { const details = error.body?.problems?.map(problem => problem.message).join('\n') || error.body?.details || error.message; setProblems(error.body?.problems || []); showToast(error.message, 'error', details); }
+  };
+  const remove = async () => { if (!selectedId || !confirm(`Delete ${selectedId}?`)) return; await request(`/api/items/${selectedId}`, { method: 'DELETE' }); setSelectedId(null); setItem(blankItem()); await load(); };
+  const exportProject = async () => {
+    setExportState({ status: 'building', message: 'Building items.cis.txt and resource-pack.zip...' });
+    setExportDetails(''); setShowExportDetails(true);
+    try {
+      const result = await request('/api/export', { method: 'POST' });
+      setExportState({ status: 'success', message: result.message });
+    } catch (error) {
+      setExportState({ status: 'error', message: 'Export failed. Open details to see why.' });
+      setExportDetails(error.body?.details || error.message);
+      setShowExportDetails(true);
+    }
+  };
+  const uploadTexture = async event => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setUploading(true); setToast(null);
+    try {
+      const data = new FormData(); data.append('texture', file);
+      const result = await request('/api/textures', { method: 'POST', body: data });
+      update('texture', result.path); await load(); showToast(`Uploaded ${result.path}. Save the item to keep its texture assignment.`);
+    } catch (error) { showToast(error.message, 'error', error.body?.details || error.message); } finally { setUploading(false); event.target.value = ''; }
+  };
+  const errors = problems.filter(problem => problem.level === 'error');
+  const armor = isArmor(item.material);
+  return <main>
+    <header><div><p className="eyebrow">KCI / Paper 26.2+</p><h1>Item Workshop</h1></div><div className="project-path">{project?.directory}</div><button className="export" onClick={exportProject} disabled={exportState.status === 'building'}><Upload size={16} /> Build plugin files</button></header>
+    <aside><div className="sidebar-heading"><strong>Custom items</strong><button className="icon-button" title="New custom item" onClick={() => { setSelectedId(null); setItem(blankItem()); setProblems([]); }}><Plus size={18} /></button></div><div className="item-list">{items.map(listItem => <button className={listItem.id === selectedId ? 'item-row active' : 'item-row'} onClick={() => select(listItem)} key={listItem.id}><span className="item-glyph">{listItem.material.slice(0, 1)}</span><span><strong>{listItem.displayName}</strong><small>{listItem.id}</small></span></button>)}</div></aside>
+    <section className="editor"><div className="editor-title"><div><p className="eyebrow">Item definition</p><h2>{selectedId || 'New custom item'}</h2></div><div><button className="icon-button destructive" title="Delete selected item" disabled={!selectedId} onClick={remove}><Trash2 size={18} /></button><button className="primary" onClick={save}><Save size={16} /> Save item</button></div></div>
+      <div className="form-grid"><label>Internal ID<Help text="A permanent lowercase identifier used by KCI commands and configuration." /><input value={item.id} onChange={event => update('id', event.target.value)} placeholder="frostbrand" /></label><label>Display name<Help text="The name shown to players. Use & color codes if desired." /><input value={item.displayName} onChange={event => update('displayName', event.target.value)} placeholder="Frostbrand" /></label><label>Base material<Help text="Search by name, then select a standard KCI material. Model data only needs to be unique within this material." /><input className="material-picker" list="kci-materials" value={item.material} onChange={event => update('material', event.target.value.toUpperCase())} placeholder="Search materials..." /><datalist id="kci-materials">{project?.config.validation.allowedMaterials.map(material => <option key={material} value={material}>{prettyMaterial(material)}</option>)}</datalist></label><label>Custom model data<Help text="A unique positive number for this base material. It connects this item to its resource-pack model and texture." /><input type="number" value={item.customModelData} onChange={event => update('customModelData', Number(event.target.value))} /></label><label className="wide">Inventory texture<Help text="The inventory texture embedded in the generated resource pack. Use a square PNG with power-of-two dimensions, such as 16x16 or 32x32." /><select value={item.texture} onChange={event => update('texture', event.target.value)}><option value="">No texture assigned</option>{textures.map(texture => <option key={texture} value={texture}>{texture}</option>)}</select></label><div className="wide texture-actions"><input ref={textureInput} className="file-input" type="file" accept="image/png" onChange={uploadTexture} /><button onClick={() => textureInput.current?.click()} disabled={uploading}><ImagePlus size={16} /> {uploading ? 'Uploading...' : 'Upload PNG texture'}</button>{item.texture && <span>{item.texture}</span>}</div>{armor && <section className="armor-textures wide"><div><h3>Worn armor textures <Help text="These two PNGs control the armor worn on a player. Both must be exactly twice as wide as tall, typically 64x32. Layer 1 is used by helmets, chestplates, and boots; layer 2 is used by leggings." /></h3><p>Choose both layers to render this armor when worn.</p></div><div className="form-grid"><label>Texture set name<input value={item.armorTexture?.name || ''} onChange={event => update('armorTexture', { ...item.armorTexture, name: event.target.value })} placeholder="frost_armor" /></label><div className="armor-layer"><label>Layer 1<Help text="Humanoid layer for helmets, chestplates, and boots." /><select value={item.armorTexture?.layer1 || ''} onChange={event => update('armorTexture', { ...item.armorTexture, layer1: event.target.value })}><option value="">Choose layer 1 PNG</option>{textures.map(texture => <option key={texture} value={texture}>{texture}</option>)}</select></label><div className="armor-layer-preview">{item.armorTexture?.layer1 ? <img src={`/textures/${item.armorTexture.layer1.split('/').map(encodeURIComponent).join('/')}`} alt="Armor layer 1 preview" /> : 'L1'}</div></div><div className="armor-layer"><label>Layer 2<Help text="Humanoid leggings layer." /><select value={item.armorTexture?.layer2 || ''} onChange={event => update('armorTexture', { ...item.armorTexture, layer2: event.target.value })}><option value="">Choose layer 2 PNG</option>{textures.map(texture => <option key={texture} value={texture}>{texture}</option>)}</select></label><div className="armor-layer-preview">{item.armorTexture?.layer2 ? <img src={`/textures/${item.armorTexture.layer2.split('/').map(encodeURIComponent).join('/')}`} alt="Armor layer 2 preview" /> : 'L2'}</div></div></div></section>}</div>
+      <section className="collection-editor"><div className="collection-heading"><div><h3>Enchantments <Help text="Fixed enchantments are applied when KCI creates the item. KCI disables ordinary enchanting-table use when this list is not empty." /></h3><p>Applied to the item when it is created.</p></div><button onClick={() => update('enchantments', [...item.enchantments, { type: 'sharpness', level: 1 }])}><Plus size={16} /> Add enchantment</button></div>{item.enchantments.map((enchantment, index) => <div className="editor-row" key={`enchantment-${index}`}><select value={enchantment.type} onChange={event => updateListEntry('enchantments', index, 'type', event.target.value)}>{enchantments.map(type => <option key={type} value={type}>{type.replaceAll('_', ' ')}</option>)}</select><input aria-label="Enchantment level" type="number" min="1" value={enchantment.level} onChange={event => updateListEntry('enchantments', index, 'level', Number(event.target.value))} /><button className="icon-button destructive" title="Remove enchantment" onClick={() => removeListEntry('enchantments', index)}><Trash2 size={16} /></button></div>)}</section>
+      <section className="collection-editor"><div className="collection-heading"><div><h3>Attributes <Help text="ADD adds a flat value. ADD FACTOR adds a percentage of the base value. MULTIPLY multiplies the final value. Choose the slot where the modifier applies." /></h3><p>Modifiers applied while the item is equipped.</p></div><button onClick={() => update('attributes', [...item.attributes, { attribute: 'ATTACK_DAMAGE', slot: 'MAINHAND', operation: 'ADD', value: 1 }])}><Plus size={16} /> Add attribute</button></div>{item.attributes.map((attribute, index) => <div className="attribute-row" key={`attribute-${index}`}><select value={attribute.attribute} onChange={event => updateListEntry('attributes', index, 'attribute', event.target.value)}>{attributes.map(type => <option key={type}>{type.replaceAll('_', ' ')}</option>)}</select><select value={attribute.slot} onChange={event => updateListEntry('attributes', index, 'slot', event.target.value)}>{slots.map(slot => <option key={slot}>{slot.replaceAll('_', ' ')}</option>)}</select><select value={attribute.operation} onChange={event => updateListEntry('attributes', index, 'operation', event.target.value)}>{operations.map(operation => <option key={operation}>{operation.replaceAll('_', ' ')}</option>)}</select><input aria-label="Attribute value" type="number" step="any" value={attribute.value} onChange={event => updateListEntry('attributes', index, 'value', Number(event.target.value))} /><button className="icon-button destructive" title="Remove attribute" onClick={() => removeListEntry('attributes', index)}><Trash2 size={16} /></button></div>)}</section>
+    </section>
+    <section className="preview"><p className="eyebrow">Inventory item</p><div className="item-preview">{item.texture ? <img src={`/textures/${item.texture.split('/').map(encodeURIComponent).join('/')}`} alt="Assigned inventory texture" onError={event => { event.currentTarget.style.display = 'none'; }} /> : <span>{item.material.slice(0, 2)}</span>}</div><strong>{item.displayName || 'Untitled item'}</strong><small>{item.material} / {item.customModelData}</small>{armor && <div className="worn-previews"><p className="eyebrow">Worn armor: layer 1</p><div className="worn-preview">{item.armorTexture?.layer1 ? <img src={`/textures/${item.armorTexture.layer1.split('/').map(encodeURIComponent).join('/')}`} alt="Worn armor layer 1" /> : <span>L1</span>}</div><p className="eyebrow">Worn armor: layer 2</p><div className="worn-preview">{item.armorTexture?.layer2 ? <img src={`/textures/${item.armorTexture.layer2.split('/').map(encodeURIComponent).join('/')}`} alt="Worn armor layer 2" /> : <span>L2</span>}</div></div>}</section>
+    {showExportDetails && <div className="modal-backdrop" role="presentation"><section className="export-modal" role="dialog" aria-modal="true" aria-labelledby="export-status-title"><div className="modal-header"><div><p className="eyebrow">{exportState.status === 'building' ? 'Export in progress' : exportState.status === 'success' ? 'Export complete' : 'Build failed'}</p><h2 id="export-status-title">{exportState.status === 'building' ? 'Building plugin files' : exportState.status === 'success' ? 'Plugin files ready' : 'Export diagnostics'}</h2></div>{exportState.status !== 'building' && <button className="icon-button" title="Close export status" onClick={() => setShowExportDetails(false)}><X size={18} /></button>}</div><div className={`export-result ${exportState.status}`} aria-live="polite">{exportState.status === 'building' && <LoaderCircle className="spinning" size={24} />}{exportState.status === 'success' && <CheckCircle2 size={24} />}{exportState.status === 'error' && <AlertTriangle size={24} />}<p>{exportState.message}</p></div>{exportState.status === 'error' && <pre>{exportDetails}</pre>}<div className="modal-actions">{exportState.status === 'error' && <button onClick={() => navigator.clipboard.writeText(exportDetails)}>Copy details</button>}{exportState.status !== 'building' && <button className="primary" onClick={() => setShowExportDetails(false)}>Close</button>}</div></section></div>}
+    {toast && <div className={`toast ${toast.status}`} role="status"><span>{toast.status === 'success' ? <CheckCircle2 size={18} /> : <AlertTriangle size={18} />}</span><p>{toast.message}</p>{toast.details && <button onClick={() => { setToastDetails(toast.details); setShowToastDetails(true); }}>Details</button>}<button className="icon-button" title="Dismiss notification" onClick={() => setToast(null)}><X size={16} /></button></div>}
+    {showToastDetails && <div className="modal-backdrop" role="presentation"><section className="export-modal" role="dialog" aria-modal="true" aria-labelledby="notification-details-title"><div className="modal-header"><div><p className="eyebrow">Action failed</p><h2 id="notification-details-title">Details</h2></div><button className="icon-button" title="Close details" onClick={() => setShowToastDetails(false)}><X size={18} /></button></div><pre>{toastDetails}</pre><div className="modal-actions"><button onClick={() => navigator.clipboard.writeText(toastDetails)}>Copy details</button><button className="primary" onClick={() => setShowToastDetails(false)}>Close</button></div></section></div>}
+  </main>;
+}
+createRoot(document.getElementById('root')).render(<App />);

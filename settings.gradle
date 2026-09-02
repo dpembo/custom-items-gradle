@@ -5,3 +5,5 @@ include 'bit-helper', 'gui', 'shared-code', 'plug-in', 'editor', 'kci-nms', 'cus
         'kci-nms17', 'kci-nms18plus', 'kci-nms18', 'kci-nms19', 'kci-nms21plus', 'kci-nms20', 'kci-nms21',
 		'kci-nms26plus', 'kci-nms26',
 		'ce-event-handler', 'test-custom-recipes'
+
+include 'kci-export-cli'
