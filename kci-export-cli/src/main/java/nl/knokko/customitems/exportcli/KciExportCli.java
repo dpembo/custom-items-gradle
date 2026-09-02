@@ -14,6 +14,7 @@ import nl.knokko.customitems.item.KciItemType;
 import nl.knokko.customitems.item.KciTool;
 import nl.knokko.customitems.item.KciShears;
 import nl.knokko.customitems.item.KciShield;
+import nl.knokko.customitems.item.KciTrident;
 import nl.knokko.customitems.item.enchantment.LeveledEnchantment;
 import nl.knokko.customitems.item.enchantment.VEnchantmentType;
 import nl.knokko.customitems.itemset.ItemSet;
@@ -156,11 +157,12 @@ public class KciExportCli {
         if (type == KciItemType.BOW) return new KciBow(true);
         if (type == KciItemType.CROSSBOW) return new KciCrossbow(true);
         if (type == KciItemType.SHIELD) return new KciShield(true);
+        if (type == KciItemType.TRIDENT) return new KciTrident(true);
         if (type.getMainCategory() == KciItemType.Category.SWORD || type.getMainCategory() == KciItemType.Category.PICKAXE
                 || type.getMainCategory() == KciItemType.Category.AXE || type.getMainCategory() == KciItemType.Category.SHOVEL
                 || type.getMainCategory() == KciItemType.Category.FISHING || type.getMainCategory() == KciItemType.Category.FLINT
                 || type.getMainCategory() == KciItemType.Category.CARROTSTICK) return new KciTool(true, type);
-        throw new IllegalArgumentException("Unsupported material " + type + ". This export currently supports standard tools, armor, bows, crossbows, and shields.");
+        throw new IllegalArgumentException("Unsupported material " + type + ". This export currently supports standard tools, armor, bows, crossbows, shields, and tridents.");
     }
 
     private static KciTexture createTexture(KciItemType type, String name, BufferedImage image) {
