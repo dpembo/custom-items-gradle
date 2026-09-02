@@ -2,7 +2,7 @@ import { mkdir, readFile, readdir, rename, rm, writeFile } from 'node:fs/promise
 import path from 'node:path';
 
 const previousMaterials = ['DIAMOND_SWORD', 'IRON_SWORD', 'NETHERITE_SWORD', 'LEATHER_HELMET', 'LEATHER_CHESTPLATE', 'LEATHER_LEGGINGS', 'LEATHER_BOOTS', 'CHAINMAIL_HELMET', 'CHAINMAIL_CHESTPLATE', 'CHAINMAIL_LEGGINGS', 'CHAINMAIL_BOOTS', 'IRON_HELMET', 'IRON_CHESTPLATE', 'IRON_LEGGINGS', 'IRON_BOOTS', 'DIAMOND_HELMET', 'DIAMOND_CHESTPLATE', 'DIAMOND_LEGGINGS', 'DIAMOND_BOOTS', 'NETHERITE_HELMET', 'NETHERITE_CHESTPLATE', 'NETHERITE_LEGGINGS', 'NETHERITE_BOOTS'];
-const standardMaterials = ['WOOD_SWORD', 'STONE_SWORD', 'IRON_SWORD', 'DIAMOND_SWORD', 'GOLD_SWORD', 'NETHERITE_SWORD', 'WOOD_PICKAXE', 'STONE_PICKAXE', 'IRON_PICKAXE', 'DIAMOND_PICKAXE', 'GOLD_PICKAXE', 'NETHERITE_PICKAXE', 'WOOD_AXE', 'STONE_AXE', 'IRON_AXE', 'DIAMOND_AXE', 'GOLD_AXE', 'NETHERITE_AXE', 'WOOD_SHOVEL', 'STONE_SHOVEL', 'IRON_SHOVEL', 'DIAMOND_SHOVEL', 'GOLD_SHOVEL', 'NETHERITE_SHOVEL', 'WOOD_HOE', 'STONE_HOE', 'IRON_HOE', 'DIAMOND_HOE', 'GOLD_HOE', 'NETHERITE_HOE', 'SHEARS', 'FISHING_ROD', 'FLINT_AND_STEEL', 'CARROT_STICK'];
+const standardMaterials = ['WOOD_SWORD', 'STONE_SWORD', 'IRON_SWORD', 'DIAMOND_SWORD', 'GOLD_SWORD', 'NETHERITE_SWORD', 'WOOD_PICKAXE', 'STONE_PICKAXE', 'IRON_PICKAXE', 'DIAMOND_PICKAXE', 'GOLD_PICKAXE', 'NETHERITE_PICKAXE', 'WOOD_AXE', 'STONE_AXE', 'IRON_AXE', 'DIAMOND_AXE', 'GOLD_AXE', 'NETHERITE_AXE', 'WOOD_SHOVEL', 'STONE_SHOVEL', 'IRON_SHOVEL', 'DIAMOND_SHOVEL', 'GOLD_SHOVEL', 'NETHERITE_SHOVEL', 'WOOD_HOE', 'STONE_HOE', 'IRON_HOE', 'DIAMOND_HOE', 'GOLD_HOE', 'NETHERITE_HOE', 'SHEARS', 'FISHING_ROD', 'FLINT_AND_STEEL', 'CARROT_STICK', 'BOW', 'CROSSBOW', 'SHIELD'];
 const armorMaterials = ['LEATHER_HELMET', 'LEATHER_CHESTPLATE', 'LEATHER_LEGGINGS', 'LEATHER_BOOTS', 'CHAINMAIL_HELMET', 'CHAINMAIL_CHESTPLATE', 'CHAINMAIL_LEGGINGS', 'CHAINMAIL_BOOTS', 'IRON_HELMET', 'IRON_CHESTPLATE', 'IRON_LEGGINGS', 'IRON_BOOTS', 'DIAMOND_HELMET', 'DIAMOND_CHESTPLATE', 'DIAMOND_LEGGINGS', 'DIAMOND_BOOTS', 'GOLD_HELMET', 'GOLD_CHESTPLATE', 'GOLD_LEGGINGS', 'GOLD_BOOTS', 'NETHERITE_HELMET', 'NETHERITE_CHESTPLATE', 'NETHERITE_LEGGINGS', 'NETHERITE_BOOTS'];
 
 const defaultConfig = {
@@ -29,7 +29,7 @@ export class ProjectStore {
     await mkdir(this.projectDirectory, { recursive: true });
     try {
       this.config = { ...defaultConfig, ...JSON.parse(await readFile(this.configPath, 'utf8')) };
-      if (JSON.stringify(this.config.validation.allowedMaterials) === JSON.stringify(previousMaterials)) {
+      if (JSON.stringify(this.config.validation.allowedMaterials) === JSON.stringify(previousMaterials) || !this.config.validation.allowedMaterials.includes('BOW')) {
         this.config.validation.allowedMaterials = [...defaultConfig.validation.allowedMaterials];
         this.config.validation.customModelData = { ...defaultConfig.validation.customModelData };
         await writeFile(this.configPath, `${JSON.stringify(this.config, null, 2)}\n`);
