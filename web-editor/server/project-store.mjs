@@ -16,7 +16,7 @@ const defaultConfig = {
 };
 
 export function defaultItem() {
-  return { id: '', displayName: '', material: 'DIAMOND_SWORD', customModelData: 1, texture: '', lore: [], enchantments: [], attributes: [] };
+  return { id: '', displayName: '', material: '', customModelData: 1, texture: '', lore: [], enchantments: [], attributes: [] };
 }
 
 export class ProjectStore {
