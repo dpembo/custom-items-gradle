@@ -6,17 +6,23 @@ import nl.knokko.customitems.MCVersions;
 import nl.knokko.customitems.bithelper.ByteArrayBitOutput;
 import nl.knokko.customitems.editor.resourcepack.ResourcepackGenerator;
 import nl.knokko.customitems.item.KciArmor;
+import nl.knokko.customitems.item.KciBow;
+import nl.knokko.customitems.item.KciCrossbow;
 import nl.knokko.customitems.item.KciHoe;
 import nl.knokko.customitems.item.KciAttributeModifier;
 import nl.knokko.customitems.item.KciItemType;
 import nl.knokko.customitems.item.KciTool;
 import nl.knokko.customitems.item.KciShears;
+import nl.knokko.customitems.item.KciShield;
 import nl.knokko.customitems.item.enchantment.LeveledEnchantment;
 import nl.knokko.customitems.item.enchantment.VEnchantmentType;
 import nl.knokko.customitems.itemset.ItemSet;
 import nl.knokko.customitems.settings.ExportSettings;
 import nl.knokko.customitems.texture.KciTexture;
 import nl.knokko.customitems.texture.ArmorTexture;
+import nl.knokko.customitems.texture.BowTexture;
+import nl.knokko.customitems.texture.BowTextureEntry;
+import nl.knokko.customitems.texture.CrossbowTexture;
 import nl.knokko.customitems.util.StringEncoder;
 
 import javax.imageio.ImageIO;
@@ -72,7 +78,7 @@ public class KciExportCli {
             if (image == null) throw new IllegalArgumentException(imagePath + " is not a readable PNG image");
 
             String textureName = "web_" + itemName.replace('-', '_');
-            KciTexture texture = KciTexture.createQuick(textureName, image);
+            KciTexture texture = createTexture(itemType, textureName, image);
             itemSet.textures.add(texture);
 
                     KciTool item = createItem(itemType);
@@ -147,11 +153,38 @@ public class KciExportCli {
             return hoe;
         }
         if (type == KciItemType.SHEARS) return new KciShears(true);
+        if (type == KciItemType.BOW) return new KciBow(true);
+        if (type == KciItemType.CROSSBOW) return new KciCrossbow(true);
+        if (type == KciItemType.SHIELD) return new KciShield(true);
         if (type.getMainCategory() == KciItemType.Category.SWORD || type.getMainCategory() == KciItemType.Category.PICKAXE
                 || type.getMainCategory() == KciItemType.Category.AXE || type.getMainCategory() == KciItemType.Category.SHOVEL
                 || type.getMainCategory() == KciItemType.Category.FISHING || type.getMainCategory() == KciItemType.Category.FLINT
                 || type.getMainCategory() == KciItemType.Category.CARROTSTICK) return new KciTool(true, type);
-        throw new IllegalArgumentException("Unsupported material " + type + ". This export currently supports standard tools and armor.");
+        throw new IllegalArgumentException("Unsupported material " + type + ". This export currently supports standard tools, armor, bows, crossbows, and shields.");
+    }
+
+    private static KciTexture createTexture(KciItemType type, String name, BufferedImage image) {
+        if (type == KciItemType.BOW) {
+            BowTexture texture = new BowTexture(true);
+            texture.setName(name);
+            texture.setImage(image);
+            texture.setPullTextures(List.of(
+                    BowTextureEntry.createQuick(image, 0.0), BowTextureEntry.createQuick(image, 0.65), BowTextureEntry.createQuick(image, 0.9)
+            ));
+            return texture;
+        }
+        if (type == KciItemType.CROSSBOW) {
+            CrossbowTexture texture = new CrossbowTexture(true);
+            texture.setName(name);
+            texture.setImage(image);
+            texture.setPullTextures(List.of(
+                    BowTextureEntry.createQuick(image, 0.0), BowTextureEntry.createQuick(image, 0.58), BowTextureEntry.createQuick(image, 1.0)
+            ));
+            texture.setArrowImage(image);
+            texture.setFireworkImage(image);
+            return texture;
+        }
+        return KciTexture.createQuick(name, image);
     }
 
     private static List<String> readLore(JsonObject json) {

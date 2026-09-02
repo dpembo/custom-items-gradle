@@ -41,6 +41,15 @@ class KciExportCliTest {
         Files.writeString(itemsDirectory.resolve("frostshears.json"), """
             {"id":"frostshears","displayName":"Frost Shears","material":"SHEARS","customModelData":1001,"texture":"frostbrand.png","lore":[],"enchantments":[],"attributes":[]}
             """);
+        Files.writeString(itemsDirectory.resolve("frostbow.json"), """
+            {"id":"frostbow","displayName":"Frost Bow","material":"BOW","customModelData":1001,"texture":"frostbrand.png","lore":[],"enchantments":[],"attributes":[]}
+            """);
+        Files.writeString(itemsDirectory.resolve("frostcrossbow.json"), """
+            {"id":"frostcrossbow","displayName":"Frost Crossbow","material":"CROSSBOW","customModelData":1001,"texture":"frostbrand.png","lore":[],"enchantments":[],"attributes":[]}
+            """);
+        Files.writeString(itemsDirectory.resolve("frostshield.json"), """
+            {"id":"frostshield","displayName":"Frost Shield","material":"SHIELD","customModelData":1001,"texture":"frostbrand.png","lore":[],"enchantments":[],"attributes":[]}
+            """);
 
         KciExportCli.main(new String[] { itemsDirectory.toString(), texturesDirectory.toString(), outputFile.toString(), resourcePackFile.toString() });
 
@@ -49,7 +58,7 @@ class KciExportCliTest {
                 new ByteArrayBitInput(StringEncoder.decodeTextyBytes(Files.readAllBytes(outputFile))),
                 ItemSet.Side.PLUGIN, false
         );
-        assertEquals(4, decoded.items.size());
+        assertEquals(7, decoded.items.size());
         var frostbrand = decoded.items.get("frostbrand").orElseThrow();
         assertEquals("Frostbrand", frostbrand.getDisplayName());
         assertEquals(1, frostbrand.getDefaultEnchantments().size());
