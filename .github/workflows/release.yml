@@ -289,6 +289,41 @@ jobs:
           name: ce-event-handler
           path: ce-event-handler/build/classes/java/main
 
+  # ---------------------------------------------------------------------
+  # Build the Node-based web-editor (Vite/React client + Express server).
+  # Produces a zip that contains the built client (dist/), the server,
+  # package.json / package-lock.json, and README so users can:
+  #   unzip → npm ci --omit=dev → npm start
+  # ---------------------------------------------------------------------
+  web-editor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web-editor/package-lock.json
+      - name: Install and build web-editor
+        working-directory: web-editor
+        run: |
+          npm ci
+          npm run build
+      - name: Package web-editor for release
+        working-directory: web-editor
+        run: |
+          # Create a clean package directory with only runtime + built assets
+          mkdir -p ../web-editor-release
+          cp -r dist server package.json package-lock.json README.md ../web-editor-release/
+          # Optional but useful for anyone who wants to rebuild later
+          if [ -f vite.config.js ]; then cp vite.config.js ../web-editor-release/; fi
+          cd ../web-editor-release
+          zip -r ../web-editor.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: web-editor
+          path: web-editor.zip
+
   combine:
     runs-on: ubuntu-latest
     needs: [editor, plug-in, mc1-12, mc1-13, mc1-14, mc1-15, mc1-16, mc1-17, mc1-18, mc1-19, mc1-20, mc1-21, mc26, ce-event-handler]
@@ -400,11 +435,12 @@ jobs:
   # bundle that `combine` produces and turns it into an actual tagged
   # GitHub Release, following the same version/snapshot convention used
   # across this fork's other repos.
+  # Also attaches the web-editor zip produced by the web-editor job.
   # ---------------------------------------------------------------------
 
   release:
     runs-on: ubuntu-latest
-    needs: [combine]
+    needs: [combine, web-editor]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -415,6 +451,12 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: releases
+          path: releases
+
+      - name: Download web-editor artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: web-editor
           path: releases
 
       - name: Extract version from plugin.yml
@@ -492,6 +534,7 @@ jobs:
           mv releases/editor-windows.zip "releases/editor-windows-${VERSION}.zip"
           mv releases/editor-linux.zip "releases/editor-linux-${VERSION}.zip"
           mv releases/editor-macosx.zip "releases/editor-macosx-${VERSION}.zip"
+          mv releases/web-editor.zip "releases/web-editor-${VERSION}.zip"
 
           ls -lh releases/
 
@@ -514,10 +557,16 @@ jobs:
 
           ### Assets
           - \`CustomItems-${VERSION}.jar\` — put this in your server's \`plugins\` folder
-          - \`Editor-${VERSION}.jar\` — raw editor jar, requires a local Java installation
+          - \`Editor-${VERSION}.jar\` — raw (legacy Swing) editor jar, requires a local Java installation
           - \`editor-windows-${VERSION}.zip\` — bundled Windows editor, no Java required
           - \`editor-linux-${VERSION}.zip\` — bundled Linux editor, no Java required
           - \`editor-macosx-${VERSION}.zip\` — bundled macOS editor, no Java required
+          - \`web-editor-${VERSION}.zip\` — Node-based web editor (Paper 26.2+). Unzip, then:
+            \`\`\`
+            npm ci --omit=dev
+            npm start
+            \`\`\`
+            Open the URL printed by the server (default http://127.0.0.1:3210).
           EOF
           )
 
@@ -527,6 +576,7 @@ jobs:
             "releases/editor-windows-${VERSION}.zip"
             "releases/editor-linux-${VERSION}.zip"
             "releases/editor-macosx-${VERSION}.zip"
+            "releases/web-editor-${VERSION}.zip"
           )
 
           if [ "$PRERELEASE" = "true" ]; then
