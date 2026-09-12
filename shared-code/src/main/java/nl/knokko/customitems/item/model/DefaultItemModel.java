@@ -97,7 +97,7 @@ public class DefaultItemModel implements ItemModel {
                             -2f, -5f, 0f, 1.35f, 1.35f, 1.35f
                     ),
                     new DisplayProperties(
-                            "firstperson_lefthand", 5f, 0f, -5f,
+                            "firstperson_lefthand", -5f, 0f, -5f,
                             -1.5f, -5f, 0f, 1.35f, 1.35f, 1.35f
                     )
             };
