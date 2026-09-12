@@ -265,17 +265,47 @@ class ResourcepackItemOverrider {
         JsonObject root = new JsonObject();
         JsonObject outerModel = new JsonObject();
 
-        // Vanilla (and any shield without its own claim) has no "_blocking" base model, so don't reference one.
-        if (threshold == -1) return createVanillaShieldSpecial(texturePrefix);
-
         outerModel.put("type", "condition");
         outerModel.put("property", "using_item");
+        if (threshold == -1) {
+            outerModel.put("on_false", createVanillaShieldSpecial(texturePrefix));
+            outerModel.put("on_true", createVanillaShieldSpecial(texturePrefix + "_blocking"));
+            // Vanilla mirrors the special shield model on the Y/Z axes; without this it renders back-to-front.
+            outerModel.put("transformation", createIdentityMirrorTransformation());
+            return outerModel;
+        }
         outerModel.put("on_false", createModernLeaf(texturePrefix));
         outerModel.put("on_true", createModernLeaf(texturePrefix + "_blocking"));
 
         root.put("model", outerModel);
         root.put("threshold", threshold);
         return root;
+    }
+
+    private JsonObject createIdentityMirrorTransformation() {
+        JsonObject transformation = new JsonObject();
+
+        List<Double> identityRotation = new ArrayList<>(4);
+        identityRotation.add(0.0);
+        identityRotation.add(0.0);
+        identityRotation.add(0.0);
+        identityRotation.add(1.0);
+        transformation.put("left_rotation", identityRotation);
+        transformation.put("right_rotation", new ArrayList<>(identityRotation));
+
+        List<Double> scale = new ArrayList<>(3);
+        scale.add(1.0);
+        scale.add(-1.0);
+        scale.add(-1.0);
+        transformation.put("scale", scale);
+
+        List<Double> translation = new ArrayList<>(3);
+        translation.add(0.0);
+        translation.add(0.0);
+        translation.add(0.0);
+        transformation.put("translation", translation);
+
+        return transformation;
     }
 
     private JsonObject createElytraEntry(String texturePrefix, int threshold) {
