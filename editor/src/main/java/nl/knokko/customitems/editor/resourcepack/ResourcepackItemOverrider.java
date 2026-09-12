@@ -265,13 +265,11 @@ class ResourcepackItemOverrider {
         JsonObject root = new JsonObject();
         JsonObject outerModel = new JsonObject();
 
+        // Vanilla (and any shield without its own claim) has no "_blocking" base model, so don't reference one.
+        if (threshold == -1) return createVanillaShieldSpecial(texturePrefix);
+
         outerModel.put("type", "condition");
         outerModel.put("property", "using_item");
-        if (threshold == -1) {
-            outerModel.put("on_false", createVanillaShieldSpecial(texturePrefix));
-            outerModel.put("on_true", createVanillaShieldSpecial(texturePrefix + "_blocking"));
-            return outerModel;
-        }
         outerModel.put("on_false", createModernLeaf(texturePrefix));
         outerModel.put("on_true", createModernLeaf(texturePrefix + "_blocking"));
 

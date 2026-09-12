@@ -1,6 +1,6 @@
 # KCI Web Editor
 
-The first web-editor slice manages custom-item JSON files in a local project directory. It is intentionally separate from the legacy Swing editor and is scoped to Paper 26.2+.
+The first web-editor slice manages custom-item JSON files in a local project directory. It is intentionally separate from the legacy Swing editor and is scoped to Paper 26.2+
 
 ## Requirements
 
