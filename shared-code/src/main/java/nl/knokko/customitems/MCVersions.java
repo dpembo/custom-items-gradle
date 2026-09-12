@@ -29,7 +29,7 @@ public class MCVersions {
 			case 19: return "1.19.4";
 			case 20: return "1.20.6";
 			case 21: return "1.21.11";
-			case 26: return "26.1.2";
+			case 26: return "26.2";
 		}
 		throw new IllegalArgumentException("Unknown version " + version);
 	}
